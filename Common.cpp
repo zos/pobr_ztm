@@ -32,7 +32,7 @@ std::ostream& operator<<(std::ostream &os, const Point &p) {
 }
 
 std::ostream& operator<<(std::ostream &os, const Boundary &b) {
-	os << b.sw << " - " << b.ne;
+	os << b.sw << " - " << b.ne << " [" << b.gray << "]";
 	return os;
 }
 
@@ -71,16 +71,19 @@ void fillPoint(cv::Mat &res, const Point &p, const cv::Vec3b &colour) {
 	_R(p.y, p.x) = colour;
 }
 
-void fillBoundary(cv::Mat& res, const Boundary &boundary) {
+void fillBoundary(cv::Mat& res, const Boundary &boundary, int percentage) {
 	cv::Mat_<cv::Vec3b> _R = res;
+	unsigned char blue = 255 * (100 - percentage)/100;
+	unsigned char green = 255 * (percentage)/100;
+	cv::Vec3b colour = {blue, 0, green};
 
 	for (long i = boundary.sw.x; i < boundary.ne.x; i++) {
-		_R(boundary.sw.y, i) = { 0, 0, 0 };
-		_R(boundary.ne.y, i) = { 0, 0, 0 };
+		_R(i, boundary.sw.y) = colour;
+		_R(i, boundary.ne.y) = colour;
 	}
 	for (long i = boundary.sw.y; i < boundary.ne.y; i++) {
-		_R(i, boundary.sw.x) = { 0, 0, 0 };
-		_R(i, boundary.ne.x) = { 0, 0, 0 };
+		_R(boundary.sw.x, i) = colour;
+		_R(boundary.ne.x, i) = colour;
 	}
 }
 

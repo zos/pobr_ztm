@@ -13,8 +13,11 @@ const double pi = 3.14;
 struct Point {
 	long x;
 	long y;
-	bool operator!=(const Point &other) {
+	bool operator!=(const Point &other) const {
 		return other.x != x || other.y != y;
+	}
+	bool operator==(const Point &other) const {
+		return other.x == x && other.y == y;
 	}
 };
 
@@ -24,7 +27,7 @@ struct Boundary {
 };
 
 template<typename F>
-void for_pixel(cv::Mat & I, F f)  {
+void for_pixel(cv::Mat &I, F f)  {
 	 for (int row = 0; row < I.rows; row++) {
 		for (int column = 0; column < I.cols; column++) {
 			f(row, column);
@@ -39,8 +42,38 @@ void for_neighbour(int row, int col, F f) {
 	for(auto r : rows) {
 		for(auto c : cols)
 			if (r != row || c != col)
-				f(r, c);
+				if(!f(r, c))
+					return;
 	}
+}
+
+template<typename F>
+void for_mask(int row, int col, std::vector<std::vector<int>> mask, F f) {
+	std::vector<int> rows, cols;
+	for (size_t i = 1; i <= mask.size() / 2; i++) {
+		cols.push_back(col - i);
+	}
+	cols.push_back(col);
+	for (size_t i = 1; i <= mask.size() / 2; i++) {
+		cols.push_back(col + i);
+	}
+	for (size_t i = 1; i <= mask[0].size() / 2; i++) {
+		rows.push_back(row - i);
+	}
+	rows.push_back(row);
+	for (size_t i = 1; i <= mask[0].size() / 2; i++) {
+		rows.push_back(row + i);
+	}
+	for(size_t i = 0; i < rows.size(); ++i) {
+		auto r = rows[i];
+		for(size_t j = 0; j < cols.size(); ++j) {
+			auto c = cols[j];
+			if(!f(r, c, mask[i][j]))
+				return;
+		}
+	}
+
+
 }
 
 Point normalize(cv::Mat &I, int row, int col);
@@ -54,6 +87,6 @@ Boundary countBoundary(cv::Mat &I, short gray_level = 0);
 Point boundaryCenter(const Boundary &b);
 
 void fillPoint(cv::Mat &res, const Point &p, const cv::Vec3b &colour);
-void fillBoundary(cv::Mat& res, const Boundary &boundary);
+void fillBoundary(cv::Mat& res, const Boundary &boundary, int percentage = 0);
 
 

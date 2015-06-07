@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Momentum.h"
 #include "Operations.h"
+#include "Segmentation.h"
 
 #include <string>
 #include <vector>
@@ -13,6 +14,7 @@
 
 
 const std::string root_dir = "/home/zosia/studia/POBR/projekt/";
+const std::string foty_dir = root_dir + "foty/";
 const std::string ztm = root_dir + "logoztm.jpg";
 const std::string cola = root_dir + "logocola.jpg";
 const std::string pizza = root_dir + "logopizza.png";
@@ -20,6 +22,10 @@ const std::string pizzamale = root_dir + "logopizzamale.png";
 const std::string zwierciadlo = root_dir + "logozwierciadlo.jpg";
 const std::string zwierciadlomale = root_dir + "logozwierciadlomale.jpg";
 
+const std::string img1 = foty_dir + "IMG_7845.png";
+const std::string img2 = foty_dir + "IMG_7775.png";
+const std::string img3 = foty_dir + "IMG_7778.png";
+const std::string img4 = foty_dir + "IMG_7774.png";
 const std::string res_file = root_dir + "res.csv";
 
 struct Pattern {
@@ -29,6 +35,8 @@ struct Pattern {
 
 std::vector<Pattern> patterns = {{ztm, 4}};
 std::vector<Pattern> antipatterns = {{cola, 4}, {pizza, 6}, {pizzamale, 5}, {zwierciadlo, 6}, {zwierciadlomale, 6}};
+
+std::vector<std::string> images = {img3};
 
 std::map<std::string, std::vector<double>> results;
 
@@ -41,7 +49,7 @@ bool checkBounder(const cv::Mat_<cv::Vec3b> &_I, long i, long j) {
 }
 
 void fillCG(cv::Mat &res, const Point &cg) {
-	fillPoint(res, cg, {0,0,0});
+	fillPoint(res, cg, cv::Vec3b{0,0,0});
 }
 
 cv::Mat processOne(cv::Mat &I, const std::string &name, int strength) {
@@ -145,7 +153,7 @@ void findBestMomentum(const std::string &name) {
 	std::cout << "Best momentum is : " << "M" << max + 1 << std::endl;
 }
 
-void process(const Pattern &pattern) {
+void processPattern(const Pattern &pattern) {
 	std::cout << "Start " << pattern.file << "..." << std::endl;
 	cv::Mat image = cv::imread(pattern.file);
 	std::cout << "Channels: " << image.channels() << std::endl;
@@ -158,16 +166,54 @@ void process(const Pattern &pattern) {
 	std::cout << "End " << pattern.file << std::endl;
 }
 
+void processImage(const std::string &image_file) {
+	std::cout << "Start " << image_file << "..." << std::endl;
+	cv::Mat I = cv::imread(image_file);
+	cv::Mat res = I.clone();
+
+	cv::imshow("real", I);
+	cv::waitKey(-1);
+	Segmentation segmentator(res);
+
+	segmentator.enhanceColours();
+	cv::imshow("enhance colors", segmentator.getImage());
+	cv::waitKey(-1);
+	segmentator.segmentate();
+	auto &objects = segmentator.getBackgroundObjects();
+	auto segmentated = segmentator.getResult();
+	cv::imwrite(root_dir + "Result.png", segmentated);
+	for(auto &object : objects) {
+		//std::cout << "Boundary : " << object << std::endl;
+		fillBoundary(segmentated, object);
+	}
+	cv::imshow("segmentate-borders", segmentated);
+	cv::waitKey(-1);
+	//cv::imwrite(root_dir + "Result.png", segmentated);
+
+	auto &objects2 = segmentator.getObjects();
+	auto objImage = segmentator.getObjImage();
+	for(auto &object : objects2) {
+		fillBoundary(objImage, object);
+	}
+	cv::imshow("segmentate-objects", objImage);
+	cv::waitKey(-1);
+
+}
+
 int main(int, char *[]) {
-    for(const auto &pattern : patterns) {
-    	process(pattern);
+    /*for(const auto &pattern : patterns) {
+    	processPattern(pattern);
     }
     for(const auto &anti : antipatterns) {
-    	process(anti);
+    	processPattern(anti);
     }
 	std::string name = patterns[0].file.substr(root_dir.length(), patterns[0].file.size());
     findBestMomentum(name);
     saveResults();
+    */
+    for(const auto &image : images) {
+    	processImage(image);
+    }
     //cv::waitKey(-1);
     return 0;
 }

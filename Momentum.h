@@ -9,8 +9,6 @@
 extern std::map<std::string, std::function<double(cv::Mat&, const Boundary &b, const Point&)>> momentumMap;
 
 std::vector<cv::Vec3b> getMask(const cv::Mat_<cv::Vec3b> & _I, int p_i, int p_j, int N);
-cv::Mat filterMedian(cv::Mat& I);
-
 
 double countW1(long space);
 double countW3( long space, long circuit);
