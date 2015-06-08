@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <getopt.h>
 
 
 const std::string root_dir = "/home/zosia/studia/POBR/projekt/";
@@ -200,7 +201,28 @@ void processImage(const std::string &image_file) {
 
 }
 
-int main(int, char *[]) {
+void parseArguments(int argc, char **argv, std::string &file) {
+	const struct option longopts[] = {
+			{"file", required_argument, 0, 'f'},
+			{"help", no_argument, 0, 'h'}
+	};
+	opterr = 1;
+	int arg;
+	while((arg = getopt_long(argc, argv, "f:h", longopts, NULL)) != -1) {
+		switch(arg) {
+		case 'f':
+			file = optarg;
+			std::cout << "Image chosen: " << file << std::endl;
+			break;
+		case 'h':
+			std::cout << "Usage: --filename[-f] path_to_file" << std::endl;
+			break;
+		}
+	}
+
+}
+
+int main(int argc, char **argv) {
     /*for(const auto &pattern : patterns) {
     	processPattern(pattern);
     }
@@ -211,6 +233,12 @@ int main(int, char *[]) {
     findBestMomentum(name);
     saveResults();
     */
+	std::string user_file;
+	parseArguments(argc, argv, user_file);
+	if (!user_file.empty()) {
+		images.clear();
+		images.push_back(user_file);
+	}
     for(const auto &image : images) {
     	processImage(image);
     }

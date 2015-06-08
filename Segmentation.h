@@ -15,13 +15,13 @@ class Segmentation {
 public:
 	Segmentation(cv::Mat &I);
 	cv::Mat getResult() {
-		return m_bgrImage;
+		return m_bgrImage.clone();
 	}
 	cv::Mat getObjImage() {
-		return m_objImage;
+		return m_objImage.clone();
 	}
 	cv::Mat getImage() {
-		return m_image;
+		return m_image.clone();
 	}
 	void enhanceColours();
 	void segmentate();

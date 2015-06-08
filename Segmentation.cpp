@@ -125,7 +125,7 @@ void Segmentation::BFS(Point x, unsigned char gray) {
 		//if (pixels == 50)
 		//	exit(1);
 	}
-	if (pixels < AlgorithmParameters::MIN_SPACE || sw == ne)
+	if (pixels < AlgorithmParameters::MIN_BGR_SPACE || sw == ne)
 		return;
 
 	m_bgrObjects.push_back({sw, ne ,gray});
@@ -137,7 +137,8 @@ void Segmentation::processBackground() {
 	unsigned char gray = 0;
 	while(x.x != -1) {
 		//std::cout << "Red point: " << x << std::endl;
-		BFS(x, gray++);
+		BFS(x, gray);
+		gray += 5;
 		Point y;
 		if (x.y + 1 >= m_image.cols) {
 			y.y = 0;
@@ -171,7 +172,6 @@ void Segmentation::findObject(const Boundary &b) {
 		int start_col, end_col;
 		State state = BEGIN;
 		for (int col = b.sw.x + 1; col < b.ne.x; ++col) {
-			std::cout << Point{col, row} << gray(m_bgrImageMatrix(col, row)) << std::endl;
 			switch(state) {
 			case BEGIN:
 				if(gray(m_bgrImageMatrix(col, row)) == b.gray) {
@@ -187,6 +187,11 @@ void Segmentation::findObject(const Boundary &b) {
 			case IN_WHITE:
 				if(gray(m_bgrImageMatrix(col, row)) == b.gray) {
 					end_col = col;
+					//if (gray(m_bgrImageMatrix(start_col - 1, row)) != b.gray &&
+					//		gray(m_bgrImageMatrix(col, row)) != b.gray) {
+					//	state = IN_BGR;
+					//	continue;
+					//}
 					fillObject(row, start_col, end_col, obj_gray);
 					pixels += end_col - start_col;
 					std::cout << "Updating points " << Point{start_col, row} << ", " << Point{end_col - 1, row} << std::endl;
@@ -198,10 +203,11 @@ void Segmentation::findObject(const Boundary &b) {
 			}
 		}
 	}
-	if (pixels < 20 || pixels > 1000)
+	if (pixels < AlgorithmParameters::MIN_OBJ_SPACE || pixels > AlgorithmParameters::MAX_OBJ_SPACE)
 		return;
 	m_objects.push_back(Boundary{sw, ne, obj_gray});
 	std::cout << "Object " << Boundary{sw, ne, obj_gray} << std::endl;
+	obj_gray+=5;
 }
 
 void Segmentation::processObjects() {
