@@ -90,3 +90,11 @@ void fillBoundary(cv::Mat& res, const Boundary &boundary, int percentage) {
 Point boundaryCenter(const Boundary &b) {
 	return {(b.sw.x + b.ne.x)/2, (b.sw.y + b.ne.y)/2};
 }
+
+double dist(const std::vector<double> &pattern, const std::vector<double> &object) {
+	double diff = 0;
+	for(size_t i = 0; i < pattern.size(); i++) {
+		diff += std::pow(std::abs(object[i] - pattern[i]), 2);
+	}
+	return std::sqrt(diff);
+}

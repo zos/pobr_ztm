@@ -89,4 +89,4 @@ Point boundaryCenter(const Boundary &b);
 void fillPoint(cv::Mat &res, const Point &p, const cv::Vec3b &colour);
 void fillBoundary(cv::Mat& res, const Boundary &boundary, int percentage = 0);
 
-
+double dist(const std::vector<double> &pattern, const std::vector<double> &object);

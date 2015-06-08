@@ -32,8 +32,8 @@ class Momentum {
 public:
 	Momentum(cv::Mat &I, const Boundary &b) : m_image(I), m_boundary(b) {
 		std::cout << "Momentum::m_boundary - " << m_boundary << std::endl;
-		m_cg = countCG();
 		m00 = countMomentum(0,0);
+		m_cg = countCG();
 		M03 = countMpq(0, 3);
 		M30 = countMpq(3, 0);
 		M02 = countMpq(0, 2);
@@ -73,6 +73,14 @@ public:
 
 	std::map<std::string, double(Momentum::*)(void)> getMap() {
 		return m_momentums;
+	}
+	std::vector<double> countMomentums() {
+		std::vector<double> momVector;
+		for(auto &momentum : m_momentums) {
+			auto func = momentum.second;
+			momVector.push_back((this->*func)());
+		}
+		return momVector;
 	}
 
 private:

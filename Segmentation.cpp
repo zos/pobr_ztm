@@ -13,15 +13,19 @@ static bool is_red(const cv::Vec3b &point) {
 }
 
 Segmentation::Segmentation(cv::Mat &I) {
-	m_image = I;
-	m_imageMatrix = I;
+	m_image = I.clone();
+	m_imageMatrix = m_image;
+
+	m_enhanceImage = I.clone();
+	m_enhanceImageMatrix = m_enhanceImage;
+
 	m_bgrImage = cv::Mat(I.rows, I.cols, CV_8UC3);
 	m_bgrImage = cv::Scalar(255, 255, 255);
-	m_enhanceImage = m_image.clone();
-	m_enhanceImageMatrix = m_enhanceImage;
+	m_bgrImageMatrix = m_bgrImage;
+
 	m_objImage = m_bgrImage.clone();
 	m_objImageMatrix = m_objImage;
-	m_bgrImageMatrix = m_bgrImage;
+
 }
 
 static bool is_gray(cv::Vec3b &point) {
@@ -40,7 +44,7 @@ void Segmentation::enhanceColours() {
 		//if (_I(row, col)[2] > 2 * _I(row, col)[1] /*&& _I(row, col)[2] > 2 * _I(row,col)[0]*/) {
 		//	_I(row, col) = {0, 0, 255};
 		//}
-		if (_I(row, col)[2] > 1.5 * _I(row, col)[1] /*&& _I(row, col)[2] > 2 * _I(row,col)[0]*/) {
+		if (_I(row, col)[2] > AlgorithmParameters::MIN_RED_FACTOR * _I(row, col)[1] /*&& _I(row, col)[2] > 2 * _I(row,col)[0]*/) {
 			_I(row, col) = {0, 0, 255};
 		}
 
@@ -94,8 +98,6 @@ void Segmentation::addNeighbors(std::queue<Point> &points, Point x) {
 		return;
 	for(Point &p : neighs) {
 		cv::Vec3b resPoint = m_bgrImageMatrix(p.x, p.y);
-		cv::Vec3b imagePoint = m_imageMatrix(p.x, p.y);
-		//std::cout << "Checking " << p << ":" <<  imagePoint  << " - " << resPoint << std::endl;
 		//Not yet visited neighbor
 		if (resPoint[0] == 255 && resPoint[1] == 255 && resPoint[2] == 255) {
 			//std::cout << "Processing" << std::endl;
@@ -127,11 +129,12 @@ void Segmentation::BFS(Point x, unsigned char gray) {
 	}
 	if (pixels < AlgorithmParameters::MIN_BGR_SPACE || sw == ne)
 		return;
-
-	m_bgrObjects.push_back({sw, ne ,gray});
+	std::cout << "Background : " << Boundary{sw, ne ,gray} << std::endl;
+	m_bgrObjects.push_back(Boundary{sw, ne ,gray});
 }
 
 void Segmentation::processBackground() {
+	std::cout << "Finding background objects" << std::endl;
 	Point x = findNextRed(Point{0, 0});
 
 	unsigned char gray = 0;
@@ -139,6 +142,8 @@ void Segmentation::processBackground() {
 		//std::cout << "Red point: " << x << std::endl;
 		BFS(x, gray);
 		gray += 5;
+		if (gray == 255)
+			gray += 5;
 		Point y;
 		if (x.y + 1 >= m_image.cols) {
 			y.y = 0;
@@ -174,7 +179,7 @@ void Segmentation::findObject(const Boundary &b) {
 		for (int col = b.sw.x + 1; col < b.ne.x; ++col) {
 			switch(state) {
 			case BEGIN:
-				if(gray(m_bgrImageMatrix(col, row)) == b.gray) {
+				if(gray(m_bgrImageMatrix(col, row)) != 255) {
 					state = IN_BGR;
 				}
 				break;
@@ -185,16 +190,16 @@ void Segmentation::findObject(const Boundary &b) {
 				}
 				break;
 			case IN_WHITE:
-				if(gray(m_bgrImageMatrix(col, row)) == b.gray) {
+				if(gray(m_bgrImageMatrix(col, row)) != 255) {
 					end_col = col;
-					//if (gray(m_bgrImageMatrix(start_col - 1, row)) != b.gray &&
-					//		gray(m_bgrImageMatrix(col, row)) != b.gray) {
-					//	state = IN_BGR;
-					//	continue;
-					//}
+					if (gray(m_bgrImageMatrix(start_col - 1, row)) != b.gray &&
+							gray(m_bgrImageMatrix(col, row)) != b.gray) {
+						state = IN_BGR;
+						continue;
+					}
 					fillObject(row, start_col, end_col, obj_gray);
 					pixels += end_col - start_col;
-					std::cout << "Updating points " << Point{start_col, row} << ", " << Point{end_col - 1, row} << std::endl;
+					//std::cout << "Updating points " << Point{start_col, row} << ", " << Point{end_col - 1, row} << std::endl;
 					updateBoundary(ne, sw, Point{start_col, row});
 					updateBoundary(ne, sw, Point{end_col - 1, row});
 					state = IN_BGR;
@@ -203,14 +208,15 @@ void Segmentation::findObject(const Boundary &b) {
 			}
 		}
 	}
-	if (pixels < AlgorithmParameters::MIN_OBJ_SPACE || pixels > AlgorithmParameters::MAX_OBJ_SPACE)
-		return;
+	//if (pixels < AlgorithmParameters::MIN_OBJ_SPACE || pixels > AlgorithmParameters::MAX_OBJ_SPACE)
+	//	return;
 	m_objects.push_back(Boundary{sw, ne, obj_gray});
-	std::cout << "Object " << Boundary{sw, ne, obj_gray} << std::endl;
+	std::cout << "Object : " << Boundary{sw, ne, obj_gray} << std::endl;
 	obj_gray+=5;
 }
 
 void Segmentation::processObjects() {
+	std::cout << "Finding possible objects" << std::endl;
 	for(auto &bgr : m_bgrObjects) {
 		findObject(bgr);
 	}

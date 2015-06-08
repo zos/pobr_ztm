@@ -28,7 +28,10 @@ long Momentum::countMomentum(int p, int q) {
 	for (int i = b.sw.x; i < b.ne.x; i++) {
 		for (int j = b.sw.y; j < b.ne.y; j++) {
 			//std::cout << j << std::endl;
-			momentum += std::pow(i - b.sw.x, p) * std::pow(j - b.sw.y, q) * (_I(j, i)[0] == b.gray ? 1 : 0);
+			//std::cout << (int)_I(i,j)[0] << " : " << b.gray << " : " << (_I(j, i)[0] == b.gray ? 1 : 0) << std::endl;
+
+			// i and j are switched!!!
+			momentum += std::pow(i - b.sw.x, p) * std::pow(j - b.sw.y, q) * (_I(i, j)[0] == b.gray ? 1 : 0);
 		}
 	}
 	return momentum;
@@ -36,8 +39,6 @@ long Momentum::countMomentum(int p, int q) {
 
 Point Momentum::countCG() {
 	Point cg;
-	long m00 = countMomentum(0, 0);
-
 	cg.x = countMomentum(1, 0) / m00;
 	cg.y = countMomentum(0, 1) / m00;
 	return cg;
