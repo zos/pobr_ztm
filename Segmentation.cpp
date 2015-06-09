@@ -3,6 +3,7 @@
  *		File: Segmentation.cpp
  */
 
+#include "Log.h"
 #include "Segmentation.h"
 #include "Parameters.h"
 #include <cmath>
@@ -56,13 +57,13 @@ void Segmentation::enhanceColours() {
 
 Point Segmentation::findNextRed(Point start) {
 	Point x = {-1, -1};
-	for (int row = start.x; row < m_image.rows; ++row) {
-		for(int col = start.y; col < m_image.cols; ++col)
+	for (int row = start.y; row < m_image.rows; ++row) {
+		for(int col = start.x; col < m_image.cols; ++col)
 			if (is_red(m_imageMatrix(row, col)) && gray(m_bgrImageMatrix(row, col)) == 255) {
-				x = Point{row, col};
+				x = Point{col, row};
 				return x;
 			}
-		start.y = 0;
+		start.x = 0;
 	}
 	return x;
 }
@@ -80,7 +81,7 @@ static void updateBoundary(Point &ne, Point &sw, const Point &x) {
 
 void Segmentation::addPoint(Point x, unsigned char gray) {
 
-	m_bgrImageMatrix(x.x, x.y) = {gray, gray, gray};
+	m_bgrImageMatrix(x.y, x.x) = {gray, gray, gray};
 	//std::cout << "Adding point " << x << " : " << m_imageMatrix(x.x, x.y) << " - " << m_resultMatrix(x.x, x.y) << std::endl;
 }
 
@@ -92,15 +93,15 @@ void Segmentation::addPoint(Point x, unsigned char gray) {
 void Segmentation::addNeighbors(std::queue<Point> &points, Point x) {
 	//std::cout << "Getting neighbors for : " << x << std::endl;
 	std::vector<Point> neighs = {{x.x - 1, x.y}, {x.x + 1, x.y}, {x.x, x.y - 1}, {x.x, x.y + 1}};
-	cv::Vec3b startPoint = m_bgrImageMatrix(x.x, x.y);
+								 //{x.x - 1, x.y - 1}, {x.x-1, x.y+1}, {x.x+1, x.y-1}, {x.x+1, x.y+1}};
+	cv::Vec3b startPoint = m_bgrImageMatrix(x.y, x.x);
 	//Already visited start point
 	if (startPoint[0] != 255)
 		return;
 	for(Point &p : neighs) {
-		cv::Vec3b resPoint = m_bgrImageMatrix(p.x, p.y);
+		cv::Vec3b resPoint = m_bgrImageMatrix(p.y, p.x);
 		//Not yet visited neighbor
 		if (resPoint[0] == 255 && resPoint[1] == 255 && resPoint[2] == 255) {
-			//std::cout << "Processing" << std::endl;
 			points.push(p);
 		}
 	}
@@ -110,13 +111,13 @@ void Segmentation::BFS(Point x, unsigned char gray) {
 	std::queue<Point> points;
 	points.push(x);
 
-	Point sw = {m_image.rows, m_image.cols};
+	Point sw = {m_image.cols, m_image.rows};
 	Point ne = {0, 0};
 	long int pixels = 0;
 	while(!points.empty()) {
 		Point y = points.front();
 		points.pop();
-		if (!is_red(m_imageMatrix(y.x, y.y))) {
+		if (!is_red(m_imageMatrix(y.y, y.x))) {
 			continue;
 		}
 		//std::cout << "Point for " << (int)gray << " " << y << std::endl;
@@ -127,9 +128,11 @@ void Segmentation::BFS(Point x, unsigned char gray) {
 		//if (pixels == 50)
 		//	exit(1);
 	}
-	if (pixels < AlgorithmParameters::MIN_BGR_SPACE || sw == ne)
+	if (pixels < AlgorithmParameters::MIN_BGR_SPACE || sw == ne) {
+		LOG_YELLOW("Ignoring too small background");
 		return;
-	std::cout << "Background : " << Boundary{sw, ne ,gray} << std::endl;
+	}
+	//std::cout << "Background : " << Boundary{sw, ne ,gray} << std::endl;
 	m_bgrObjects.push_back(Boundary{sw, ne ,gray});
 }
 
@@ -145,12 +148,12 @@ void Segmentation::processBackground() {
 		if (gray == 255)
 			gray += 5;
 		Point y;
-		if (x.y + 1 >= m_image.cols) {
-			y.y = 0;
-			y.x = x.x + 1;
-		} else {
-			y.x = x.x;
+		if (x.x + 1 >= m_image.cols) {
+			y.x = 0;
 			y.y = x.y + 1;
+		} else {
+			y.y = x.y;
+			y.x = x.x + 1;
 		}
 		x = findNextRed(y);
 	}
@@ -164,13 +167,13 @@ enum State {
 
 void Segmentation::fillObject(int row, int start_col, int end_col, unsigned char gray) {
 	for (int i = start_col; i < end_col; ++i) {
-		m_objImageMatrix(i, row) = {gray, gray, gray};
+		m_objImageMatrix(row, i) = {gray, gray, gray};
 	}
 }
 
 void Segmentation::findObject(const Boundary &b) {
 	static unsigned char obj_gray = 0;
-	Point sw = {m_image.rows, m_image.cols};
+	Point sw = {m_image.cols, m_image.rows};
 	Point ne = {0, 0};
 	int pixels = 0;
 	for (int row = b.sw.y + 1; row < b.ne.y; ++row) {
@@ -179,21 +182,24 @@ void Segmentation::findObject(const Boundary &b) {
 		for (int col = b.sw.x + 1; col < b.ne.x; ++col) {
 			switch(state) {
 			case BEGIN:
-				if(gray(m_bgrImageMatrix(col, row)) != 255) {
+				if(gray(m_bgrImageMatrix(row, col)) != 255) {
 					state = IN_BGR;
+					//std::cout << Point{col, row} << " background start" << std::endl;
 				}
 				break;
 			case IN_BGR:
-				if(gray(m_bgrImageMatrix(col, row)) == 255) {
+				if(gray(m_bgrImageMatrix(row, col)) == 255) {
 					state = IN_WHITE;
 					start_col = col;
+					//std::cout << Point{col, row} << " white start" << std::endl;
 				}
 				break;
 			case IN_WHITE:
-				if(gray(m_bgrImageMatrix(col, row)) != 255) {
+				if(gray(m_bgrImageMatrix(row, col)) != 255) {
 					end_col = col;
-					if (gray(m_bgrImageMatrix(start_col - 1, row)) != b.gray &&
-							gray(m_bgrImageMatrix(col, row)) != b.gray) {
+					//std::cout << Point{col, row} << " white stop" << std::endl;
+					if (gray(m_bgrImageMatrix(row, start_col - 1)) != b.gray &&
+							gray(m_bgrImageMatrix(row, end_col)) != b.gray) {
 						state = IN_BGR;
 						continue;
 					}
@@ -208,8 +214,16 @@ void Segmentation::findObject(const Boundary &b) {
 			}
 		}
 	}
-	//if (pixels < AlgorithmParameters::MIN_OBJ_SPACE || pixels > AlgorithmParameters::MAX_OBJ_SPACE)
-	//	return;
+	if (pixels < AlgorithmParameters::MIN_OBJ_SPACE ||
+			sw.x == ne.x || sw.y == ne.y) {
+		LOG_YELLOW("Ignoring too small object");
+		return;
+	}
+
+	if (pixels > AlgorithmParameters::MAX_OBJ_SPACE) {
+		LOG_YELLOW("Ignoring too big object");
+		return;
+	}
 	m_objects.push_back(Boundary{sw, ne, obj_gray});
 	std::cout << "Object : " << Boundary{sw, ne, obj_gray} << std::endl;
 	obj_gray+=5;

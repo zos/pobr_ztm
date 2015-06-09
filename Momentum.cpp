@@ -31,7 +31,7 @@ long Momentum::countMomentum(int p, int q) {
 			//std::cout << (int)_I(i,j)[0] << " : " << b.gray << " : " << (_I(j, i)[0] == b.gray ? 1 : 0) << std::endl;
 
 			// i and j are switched!!!
-			momentum += std::pow(i - b.sw.x, p) * std::pow(j - b.sw.y, q) * (_I(i, j)[0] == b.gray ? 1 : 0);
+			momentum += std::pow(i - b.sw.x, p) * std::pow(j - b.sw.y, q) * (_I(j, i)[0] == b.gray ? 1 : 0);
 		}
 	}
 	return momentum;
@@ -71,11 +71,11 @@ double Momentum::countMM3() {
 		std::pow(m00, 5);
 }
 double Momentum::countMM4() {
-	return (((std::pow(M30 + M12, 2) + std::pow(M21 + M03, 2)) / std::pow(m00,5)));
+	return (std::pow(M30 + M12, 2) + std::pow(M21 + M03, 2)) / std::pow(m00,5);
 }
 double Momentum::countMM5() {
-	return ((M30 - 3 * M12) * (M30 + M12) * ((std::pow(M30 + M12, 2) - 3 * std::pow(M21 - M03, 2)) +
-			(3 * M21 - M03) * (M21 + M03) * (3 * std::pow(M30 + M12,2) - std::pow(M21 + M03, 2)))) / std::pow(m00, 10);
+	return ((M30 - 3 * M12) * (M30 + M12) * (std::pow(M30 + M12, 2) - 3 * std::pow(M21 + M03, 2)) +
+			(3 * M21 - M03) * (M21 + M03) * (3 * std::pow(M30 + M12,2) - std::pow(M21 + M03, 2))) / std::pow(m00, 10);
 }
 double Momentum::countMM6() {
 	return ((M20 - M02) * (std::pow(M30 + M12, 2) - std::pow(M21 + M03, 2)) + 4 * M11 *
@@ -94,11 +94,6 @@ double Momentum::countMM9() {
 double Momentum::countMM10() {
 	return (std::pow(M30 * M03 - M12 * M21, 2) - 4 * (M30 * M12 - std::pow(M21,2)) * (M03 * M21 - M12)) / std::pow(m00, 10);
 }
-
-
-
-
-
 
 double countW1(long space) {
 	return 2 * std::sqrt(space / pi);

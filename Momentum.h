@@ -31,7 +31,6 @@ double countM10(cv::Mat &I, const Boundary &b, const Point &cg);
 class Momentum {
 public:
 	Momentum(cv::Mat &I, const Boundary &b) : m_image(I), m_boundary(b) {
-		std::cout << "Momentum::m_boundary - " << m_boundary << std::endl;
 		m00 = countMomentum(0,0);
 		m_cg = countCG();
 		M03 = countMpq(0, 3);

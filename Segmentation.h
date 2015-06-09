@@ -14,21 +14,21 @@
 class Segmentation {
 public:
 	Segmentation(cv::Mat &I);
-	cv::Mat getResult() {
+	cv::Mat getBgrImage() const {
 		return m_bgrImage.clone();
 	}
-	cv::Mat getObjImage() {
+	cv::Mat getObjImage() const {
 		return m_objImage.clone();
 	}
-	cv::Mat getImage() {
+	cv::Mat getImage() const {
 		return m_image.clone();
 	}
 	void enhanceColours();
 	void segmentate();
-	std::vector<Boundary>& getBackgroundObjects() {
+	const std::vector<Boundary>& getBackgroundObjects() const {
 		return m_bgrObjects;
 	}
-	std::vector<Boundary>& getObjects() {
+	const std::vector<Boundary>& getObjects() const {
 		return m_objects;
 	}
 private:

@@ -47,23 +47,23 @@ std::ostream& operator<<(std::ostream &os, const std::set<int> &s) {
 
 Boundary countBoundary(cv::Mat &I, short gray_level) {
 	cv::Mat_<cv::Vec3b> _I = I;
-	long max_vert = 0, min_vert = I.rows, max_horiz = 0, min_horiz = I.cols;
-	for (long i = 0; i < I.rows; i++) {
-		for (long j = 0; j < I.cols; j++) {
-			if (gray(_I(i, j)) == gray_level) {
-				if (i > max_vert)
-					max_vert = i;
-				if (i < min_vert)
-					min_vert = i;
-				if (j > max_horiz)
-					max_horiz = j;
-				if (j < min_horiz)
-					min_horiz = j;
+	long max_row = 0, min_row = I.rows, max_col = 0, min_col = I.cols;
+	for (long row = 0; row < I.rows; row++) {
+		for (long col = 0; col < I.cols; col++) {
+			if (gray(_I(row, col)) == gray_level) {
+				if (row > max_row)
+					max_row = row;
+				if (row < min_row)
+					min_row = row;
+				if (col > max_col)
+					max_col = col;
+				if (col < min_col)
+					min_col = col;
 			}
 		}
 	}
 
-	return Boundary{ { min_horiz - 1, min_vert - 1}, { max_horiz + 1, max_vert + 1}, gray_level };
+	return Boundary{ { min_col - 1, min_row - 1}, { max_col + 1, max_row + 1}, gray_level };
 }
 
 void fillPoint(cv::Mat &res, const Point &p, const cv::Vec3b &colour) {
@@ -75,15 +75,15 @@ void fillBoundary(cv::Mat& res, const Boundary &boundary, int percentage) {
 	cv::Mat_<cv::Vec3b> _R = res;
 	unsigned char blue = 255 * (100 - percentage)/100;
 	unsigned char green = 255 * (percentage)/100;
-	cv::Vec3b colour = {blue, 0, green};
+	cv::Vec3b colour = {blue, green, 0};
 
-	for (long i = boundary.sw.x; i < boundary.ne.x; i++) {
-		_R(i, boundary.sw.y) = colour;
-		_R(i, boundary.ne.y) = colour;
+	for (long col = boundary.sw.x; col < boundary.ne.x; col++) {
+		_R(boundary.sw.y, col) = colour;
+		_R(boundary.ne.y, col) = colour;
 	}
-	for (long i = boundary.sw.y; i < boundary.ne.y; i++) {
-		_R(boundary.sw.x, i) = colour;
-		_R(boundary.ne.x, i) = colour;
+	for (long row = boundary.sw.y; row < boundary.ne.y; row++) {
+		_R(row, boundary.sw.x) = colour;
+		_R(row, boundary.ne.x) = colour;
 	}
 }
 
@@ -94,7 +94,7 @@ Point boundaryCenter(const Boundary &b) {
 double dist(const std::vector<double> &pattern, const std::vector<double> &object) {
 	double diff = 0;
 	for(size_t i = 0; i < pattern.size(); i++) {
-		diff += std::pow(std::abs(object[i] - pattern[i]), 2);
+		diff += std::abs(object[i] - pattern[i])/std::abs(pattern[i]);
 	}
 	return std::sqrt(diff);
 }
