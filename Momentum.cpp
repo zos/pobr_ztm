@@ -27,10 +27,6 @@ long Momentum::countMomentum(int p, int q) {
 	long momentum = 0;
 	for (int i = b.sw.x; i < b.ne.x; i++) {
 		for (int j = b.sw.y; j < b.ne.y; j++) {
-			//std::cout << j << std::endl;
-			//std::cout << (int)_I(i,j)[0] << " : " << b.gray << " : " << (_I(j, i)[0] == b.gray ? 1 : 0) << std::endl;
-
-			// i and j are switched!!!
 			momentum += std::pow(i - b.sw.x, p) * std::pow(j - b.sw.y, q) * (_I(j, i)[0] == b.gray ? 1 : 0);
 		}
 	}
@@ -108,7 +104,6 @@ long countMomentum(cv::Mat &I, const Boundary &b, int p, int q) {
 	long momentum = 0;
 	for (int i = b.sw.x; i < b.ne.x; i++) {
 		for (int j = b.sw.y; j < b.ne.y; j++) {
-			//std::cout << j << std::endl;
 			momentum += std::pow(i - b.sw.x, p) * std::pow(j - b.sw.y, q) * (_I(j, i)[0] == b.gray ? 1 : 0);
 		}
 	}

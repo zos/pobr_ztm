@@ -4,6 +4,7 @@
 #include "Momentum.h"
 #include "Operations.h"
 #include "Segmentation.h"
+#include "Log.h"
 
 #include <string>
 #include <vector>
@@ -49,33 +50,16 @@ cv::Mat processOne(cv::Mat &I, const std::string &name, int strength) {
 			}
 	});
 
-	//close(res, strength);
 	auto boundary = Boundary{{0,0}, {I.cols - 1, I.rows -1} ,0};
 	std::cout << "Boundary: " << boundary << std::endl;
+	//Counting momentums
 	Momentum mom(res, boundary);
-//	auto m00 = countMomentum(res, boundary, 0, 0);
-	//auto m00_2 = mom.getm00();
-
-	//auto cg = countCG(res, boundary);
-	//auto cg_2 = mom.getCG();
-
 	for (auto momentum : mom.getMap()) {
 		auto func = momentum.second;
 		auto mx = (mom.*func)();
 		results[name].push_back(mx);
-		std::cout << momentum.first << " : " << mx  << std::endl;
+		LOG_YELLOW(momentum.first << " : " << mx);
 	}
-	// TODO make tests!!!
-	/*
-	int i = 0;
-	for (auto momentum : momentumMap) {
-		std::cout << "Counting " << momentum.first << std::endl;
-		auto mx = momentum.second(res, boundary, cg);
-		if (mx != results[name][i])
-			std::cout << "M" << i + 1 << "DIFFERS!!!" << std::endl;
-		i++;
-
-	}*/
 
 	return res;
 }
@@ -83,7 +67,7 @@ cv::Mat processOne(cv::Mat &I, const std::string &name, int strength) {
 void saveResults() {
 	std::ofstream f(res_file, std::ofstream::out | std::ofstream::trunc);
 	if (!f.is_open()) {
-		std::cout << "Couldn't open save file" << std::endl;
+		LOG_RED("Couldn't open save file");
 		return;
 	}
 
@@ -99,10 +83,13 @@ void saveResults() {
 		f << std::endl;
 	}
 	if (!f) {
-		std::cout << "Writing failed" << std::endl;
+		LOG_RED("Writing failed");
 	}
 }
 
+/*
+ * Find momentum which has the greatest value of smallest difference between pattern and antipatterns
+ */
 void findBestMomentum(const std::string &name) {
 	std::vector<double> diffs;
 	double min_diff = std::numeric_limits<double>::max();
@@ -114,7 +101,6 @@ void findBestMomentum(const std::string &name) {
 		for(auto &res : results) {
 			if(res.first != name) {
 				diff = std::abs(res.second[i] - value) / std::abs(value) * 100;
-				///std::cout << "Diff between " << name << " and " << res.first << " on M" << i + 1 << " : " << diff << "%"  << std::endl;
 				if (diff < min_diff) {
 					min_diff = diff;
 				}
@@ -126,7 +112,6 @@ void findBestMomentum(const std::string &name) {
 	unsigned int max = 0;
 	for (unsigned int i = 1; i < diffs.size(); i++) {
 		std::cout << "M" << i + 1 << " : " << diffs[i] << "%" << std::endl;
-		//std::cout << diffs[i] << "-" << max_diff << std::endl;
 		if (diffs[i] > max_diff) {
 			max_diff = diffs[i];
 			max = i;
@@ -142,10 +127,6 @@ void processPattern(const Pattern &pattern) {
 	std::cout << "Channels: " << image.channels() << std::endl;
 	std::string name = pattern.file.substr(root_dir.length(), pattern.file.size());
 	cv::Mat show = processOne(image, name, pattern.strength);
-
-	//cv::imshow(file, image);
-	//cv::imshow("Result",show);
-	//cv::imwrite("Result.dib", show);
 	std::cout << "End " << pattern.file << std::endl;
 }
 

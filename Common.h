@@ -1,6 +1,6 @@
 /*
  *      Author: Zofia Abramowska
- *		File: common.h
+ *		File: Common.h
  */
 
 #pragma once
@@ -22,10 +22,19 @@ struct Point {
 };
 
 struct Boundary {
+	/*
+	 * Points of rectangle
+	 */
 	Point sw, ne;
+	/*
+	 * Gray level of object
+	 */
 	int gray;
 };
 
+/*
+ * For each pixel call f() operation, until it returns false
+ */
 template<typename F>
 void for_pixel(cv::Mat &I, F f)  {
 	 for (int row = 0; row < I.rows; row++) {
@@ -35,6 +44,9 @@ void for_pixel(cv::Mat &I, F f)  {
 	}
 }
 
+/*
+ * For each neighbor of point call f() operation, until it returns false
+ */
 template<typename F>
 void for_neighbour(int row, int col, F f) {
 	std::vector<int> rows = {row - 1, row, row + 1};
@@ -47,6 +59,9 @@ void for_neighbour(int row, int col, F f) {
 	}
 }
 
+/*
+ * For each element of mask and image call f() operation, until it returns false
+ */
 template<typename F>
 void for_mask(int row, int col, std::vector<std::vector<int>> mask, F f) {
 	std::vector<int> rows, cols;
@@ -72,21 +87,46 @@ void for_mask(int row, int col, std::vector<std::vector<int>> mask, F f) {
 				return;
 		}
 	}
-
-
 }
 
+/*
+ * Normalize point in terms of maximum and minimum values of x and y coordinates
+ */
 Point normalize(cv::Mat &I, int row, int col);
 
+/*
+ * Count gray value of image pixel
+ */
 int gray(const cv::Vec3b &pix);
+
+/*
+ * Operator for human readable representation of structures
+ */
 std::ostream& operator<<(std::ostream &os, const Point &p);
 std::ostream& operator<<(std::ostream &os, const Boundary &b);
 std::ostream& operator<<(std::ostream &os, const std::set<int> &s);
 
+/*
+ * Find coordinates of rectangle bounding object of given gray level
+ */
 Boundary countBoundary(cv::Mat &I, short gray_level = 0);
-Point boundaryCenter(const Boundary &b);
 
+/*
+ * Fill point of image with given colour
+ */
 void fillPoint(cv::Mat &res, const Point &p, const cv::Vec3b &colour);
+/*
+ * Fill rectangle border in image
+ */
 void fillBoundary(cv::Mat& res, const Boundary &boundary, int percentage = 0);
 
+/*
+ * Count very simple weight distance between two vectors of values
+ * Vectors must be the same length
+ */
 double dist(const std::vector<double> &pattern, const std::vector<double> &object);
+
+/*
+ * Count Mahalanobis distance
+ */
+double countDist(const std::vector<double> &values);

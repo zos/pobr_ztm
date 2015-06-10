@@ -23,23 +23,60 @@ public:
 	cv::Mat getImage() const {
 		return m_image.clone();
 	}
+	/*
+	 * Enhance red and gray colours
+	 */
 	void enhanceColours();
+	/*
+	 * Find possible background and logo objects
+	 */
 	void segmentate();
+	/*
+	 * Get all found potential background objects
+	 */
 	const std::vector<Boundary>& getBackgroundObjects() const {
 		return m_bgrObjects;
 	}
+	/*
+	 * Get all potential background objects
+	 */
 	const std::vector<Boundary>& getObjects() const {
 		return m_objects;
 	}
 private:
+	/*
+	 * Find next red (in m_image) not yet visited (not marked in backgrounds image) point
+	 */
 	Point findNextRed(Point start);
-	void addPoint(Point x, unsigned char gray);
+	/*
+	 * Mark background point (marked in backgrounds image)
+	 */
+	void addBackgroundPoint(Point x, unsigned char gray);
+	/*
+	 * Add point neighbors to queue
+	 */
 	void addNeighbors(std::queue<Point> &points, Point x);
+	/*
+	 * Find all potential background objects
+	 */
 	void processBackground();
+	/*
+	 * Find all potential logo objects
+	 */
 	void processObjects();
+	/*
+	 * Find potential logo object in background boundary rectangle
+	 */
 	void findObject(const Boundary &b);
+	/*
+	 * Fill line of a potential object (marked in objects image)
+	 */
 	void fillObject(int row, int start_col, int end_col, unsigned char gray);
-	void BFS(Point begin, unsigned char gray);
+	/*
+	 * Find all red pixels connected to start point (on enhanced image)
+	 * and marked them in gray (on backgrounds image)
+	 */
+	void BFS(Point start, unsigned char gray);
 
 	cv::Mat m_image;
 	cv::Mat_<cv::Vec3b> m_imageMatrix;
